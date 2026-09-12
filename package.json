@@ -45,5 +45,8 @@
   "devDependencies": {
     "postcss": "^8",
     "tailwindcss": "^3.4.1"
+  },
+  "overrides": {
+    "jwks-rsa": "3.2.2"
   }
 }
