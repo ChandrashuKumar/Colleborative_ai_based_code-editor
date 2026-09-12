@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import { getGeminiModel } from "@/config/gemini";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(request) {
+    const ip = getClientIp(request);
+    const { allowed, retryAfterSeconds } = checkRateLimit(`${ip}:get-errors`);
+    if (!allowed) {
+        return NextResponse.json(
+            { error: "Too many requests. Please wait a moment and try again.", retryAfter: retryAfterSeconds },
+            { status: 429 }
+        );
+    }
+
     try {
         const { code } = await request.json();
         if (!code) {
@@ -24,8 +34,7 @@ export async function POST(request) {
 // 🔹 AI-Based Auto-Fix for Code
 async function fixCodeWithAI(code) {
     try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+        const model = getGeminiModel("gemini-3.6-flash");
 
         // Create a prompt to fix syntax errors without needing language specification
         const prompt = `Fix the syntax errors in the following code:\n\n${code}\n\nReturn only the corrected code without any comments or formatting like markdown.also if there are any existing comments , dont remove it `;

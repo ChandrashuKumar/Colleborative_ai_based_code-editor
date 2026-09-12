@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import { auth, firestore } from "@/config/firebase";
 import {
   collection,
@@ -70,10 +71,15 @@ function Chatroom({ workspaceId, setIsChatOpen }) {
         body: JSON.stringify({ message: prompt }),
       });
   
+      if (response.status === 429) {
+        toast.error("You're sending messages too fast — please wait a moment and try again.");
+        throw new Error('Rate limited');
+      }
+
       if (!response.ok) {
         throw new Error('API request failed');
       }
-  
+
       const data = await response.json();
       console.log("ai response data" ,data.aiResponse);
       return data.aiResponse;
