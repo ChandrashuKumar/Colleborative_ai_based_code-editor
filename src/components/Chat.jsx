@@ -33,7 +33,11 @@ function Chatroom({ workspaceId, setIsChatOpen }) {
   const name = auth.currentUser.displayName;
 
   const messagesRef = collection(firestore, "messages");
-  const messagesQuery = query(messagesRef, orderBy("createdAt"));
+  const messagesQuery = query(
+    messagesRef,
+    where("workspaceId", "==", workspaceId),
+    orderBy("createdAt")
+  );
 
   const messagesEndRef = useRef(null);
 
@@ -43,9 +47,7 @@ function Chatroom({ workspaceId, setIsChatOpen }) {
     setLoading(true);
 
     const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const messagesData = snapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((msg) => msg.workspaceId === workspaceId);
+      const messagesData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
       setMessages(messagesData);
       setLoading(false);

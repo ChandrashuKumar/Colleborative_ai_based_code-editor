@@ -105,6 +105,7 @@ const Dashboard = () => {
       const workspaceRef = await addDoc(collection(db, "workspaces"), {
         name: workspaceName,
         isPublic,
+        ownerId: user.uid,
       });
 
       const membersRef = collection(db, `workspaces/${workspaceRef.id}/members`);
