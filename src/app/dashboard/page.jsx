@@ -5,8 +5,12 @@ import { useRouter } from "next/navigation";
 import { auth, db } from "@/config/firebase";
 import {
   collection,
+  collectionGroup,
+  query,
+  where,
   addDoc,
   getDocs,
+  getDoc,
   doc,
   setDoc,
   deleteDoc,
@@ -57,26 +61,23 @@ const Dashboard = () => {
 
     const fetchWorkspaces = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "workspaces"));
+        const membershipsQuery = query(
+          collectionGroup(db, "members"),
+          where("userId", "==", user.uid)
+        );
+        const membershipSnapshot = await getDocs(membershipsQuery);
 
         const workspaceData = await Promise.all(
-          querySnapshot.docs.map(async (workspaceDoc) => {
-            const membersRef = collection(
-              db,
-              `workspaces/${workspaceDoc.id}/members`
-            );
-            const membersSnapshot = await getDocs(membersRef);
+          membershipSnapshot.docs.map(async (memberDoc) => {
+            const workspaceId = memberDoc.ref.parent.parent.id;
+            const workspaceSnap = await getDoc(doc(db, "workspaces", workspaceId));
 
-            const userMemberData = membersSnapshot.docs.find(
-              (doc) => doc.data().userId === user.uid
-            );
-
-            if (!userMemberData) return null;
+            if (!workspaceSnap.exists()) return null;
 
             return {
-              id: workspaceDoc.id,
-              ...workspaceDoc.data(),
-              role: userMemberData.data().role || "Unknown",
+              id: workspaceId,
+              ...workspaceSnap.data(),
+              role: memberDoc.data().role || "Unknown",
             };
           })
         );
