@@ -1,16 +1,25 @@
 import { NextResponse } from "next/server";
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import { getGeminiModel } from "@/config/gemini";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(request) {
+    const ip = getClientIp(request);
+    const { allowed, retryAfterSeconds } = checkRateLimit(`${ip}:getChatResponse`);
+    if (!allowed) {
+        return NextResponse.json(
+            { error: "Too many requests. Please wait a moment and try again.", retryAfter: retryAfterSeconds },
+            { status: 429 }
+        );
+    }
+
     try {
         const { message} = await request.json();
         if (!message) {
-            
+
             return NextResponse.json({ error: "Message is required" }, { status: 400 });
         }
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+        const model = getGeminiModel("gemini-3.6-flash");
 
 
         const prompt = `you an ai chat bot , who helps people in giving code and solve their probems . your response will directly be shown in the text , so give the response like a chat  and your request is this  ${message}`;

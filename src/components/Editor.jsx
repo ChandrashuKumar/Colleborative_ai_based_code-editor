@@ -3,6 +3,7 @@ import { Moon, Sun, Sparkles, Wrench, File, Expand, Shrink, Settings } from "luc
 import { useState, useEffect, useRef } from "react";
 import Editor, { useMonaco } from "@monaco-editor/react";
 import axios from "axios";
+import toast from "react-hot-toast";
 import LanguageSelector from "./LanguageSelector";
 import { CODE_SNIPPETS } from "@/constants";
 import { Box } from "@chakra-ui/react";
@@ -98,6 +99,9 @@ export default function CodeEditor({ file }) {
       setUpdatedCode((prevCode) => prevCode + commentedDocs);
     } catch (error) {
       console.error("Failed to generate documentation:", error);
+      if (error.response?.status === 429) {
+        toast.error("You're doing that too fast — please wait a moment and try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -112,6 +116,9 @@ export default function CodeEditor({ file }) {
       }
     } catch (error) {
       console.error("Failed to fix syntax:", error);
+      if (error.response?.status === 429) {
+        toast.error("You're fixing code too fast — please wait a moment and try again.");
+      }
     } finally {
       setIsFixing(false);
     }

@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import { getGeminiModel } from "@/config/gemini";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(request) {
+    const ip = getClientIp(request);
+    const { allowed, retryAfterSeconds } = checkRateLimit(`${ip}:generate-documentation`);
+    if (!allowed) {
+        return NextResponse.json(
+            { error: "Too many requests. Please wait a moment and try again.", retryAfter: retryAfterSeconds },
+            { status: 429 }
+        );
+    }
+
     try {
         const { code, language } = await request.json();
         if (!code) {
             return NextResponse.json({ error: "Code is required" }, { status: 400 });
         }
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+        const model = getGeminiModel("gemini-3.6-flash");
 
 
         const prompt = `
